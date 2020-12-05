@@ -1,19 +1,17 @@
 
-build/blink.hex: led.rel main.rel
+build/blink.hex: build/led.rel build/main.rel build/drivers/gpio.rel build/drivers/timers.rel
 	@echo "Building blink.hex" 
-	sdcc -mstm8 -o build/blink.hex build/led.rel build/main.rel
+	sdcc -mstm8 -o build/blink.hex $^
 
-led.rel: led.c
-	@mkdir -p build
-	sdcc -mstm8 -o build/ -c led.c
+build/%.rel: %.c
+	@mkdir -p build/drivers
+	sdcc -mstm8 -o build/$* -c $^
 
-main.rel: main.c
-	@mkdir -p build
-	sdcc -mstm8 -o build/ -c main.c
-
+.PHONY: flash
 flash: build/blink.hex
 	@echo "Building/flashing blink.hex"
 	stm8flash -c stlink -p stm8s105c6 -w build/blink.hex
 
+.PHONY: clean
 clean:
 	rm -rf build

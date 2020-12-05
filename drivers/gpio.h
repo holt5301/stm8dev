@@ -1,3 +1,6 @@
+#ifndef _GPIO_H
+#define _GPIO_H
+
 #include <stdint.h>
 #include <stdbool.h>
 #include "registers.h"
@@ -21,38 +24,11 @@
 #define OUTPUT_LOW PX_ODR_LOW
 #define OUTPUT_HIGH PX_ODR_HIGH
 
-void gpio_set_pin_dir(STM8GPIO_t* gpio, uint8_t bit, bool dir) {
-    uint8_t ddrreg = gpio->DDR;
-    ddrreg &= ~((uint8_t)(1 << bit)); // clear bit
-    ddrreg |= (dir << bit);
-    gpio->DDR = ddrreg;
-    return;
-}
-
-void gpio_set_output(STM8GPIO_t* gpio, uint8_t bit, bool high) {
-    uint8_t odrreg = gpio->ODR;
-    odrreg &= ~((uint8_t)(1 << bit));
-    odrreg |= (high << bit);
-    gpio->ODR = odrreg;
-    return;
-}
-
-void gpio_toggle_output(STM8GPIO_t* gpio, uint8_t bit) {
-    gpio->ODR ^= 1 << bit;
-    return;
-}
-
-bool gpio_get_output(STM8GPIO_t* gpio, uint8_t bit) {
-    return (bool)(gpio->ODR & (1 >> bit));
-}
-
-void gpio_set_ctrl_mode(STM8GPIO_t* gpio, uint8_t bit, bool mode) {
-    uint8_t cr1reg = gpio->CR1;
-    cr1reg &= ~((uint8_t)(1 << bit)); // clear bit
-    cr1reg |= (mode << bit);
-    gpio->CR1 = cr1reg;
-    return;
-}
+void gpio_set_pin_dir(STM8GPIO_t* gpio, uint8_t bit, bool dir);
+void gpio_set_output(STM8GPIO_t* gpio, uint8_t bit, bool high);
+void gpio_toggle_output(STM8GPIO_t* gpio, uint8_t bit);
+bool gpio_get_output(STM8GPIO_t* gpio, uint8_t bit);
+void gpio_set_ctrl_mode(STM8GPIO_t* gpio, uint8_t bit, bool mode);
 
 volatile static STM8GPIO_t* GPIOA = (STM8GPIO_t*)(0x005000);
 volatile static STM8GPIO_t* GPIOB = (STM8GPIO_t*)(0x005005);
@@ -63,3 +39,5 @@ volatile static STM8GPIO_t* GPIOF = (STM8GPIO_t*)(0x005019);
 volatile static STM8GPIO_t* GPIOG = (STM8GPIO_t*)(0x00501E);
 volatile static STM8GPIO_t* GPIOH = (STM8GPIO_t*)(0x005023);
 volatile static STM8GPIO_t* GPIOI = (STM8GPIO_t*)(0x005028);
+
+#endif // _GPIO_H
