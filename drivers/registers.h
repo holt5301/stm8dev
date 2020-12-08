@@ -3,7 +3,7 @@
 
 #define F_MASTER 2000000UL // 2MHz 
 #define F_CK_PSC F_MASTER
-typedef struct {
+typedef struct STM8GPIO {
     volatile uint8_t ODR; // GPIO Output Data Latch Register Offset: 0x0
     volatile uint8_t IDR; // GPIO Input Pin Value Register Offset: 0x1
     volatile uint8_t DDR; // GPIO Data Direction Register Offset: 0x2
@@ -11,8 +11,25 @@ typedef struct {
     volatile uint8_t CR2; // GPIO Control Register 2 Offset: 0x4
 } STM8GPIO_t;
 
+typedef struct STM8I2C {
+    volatile uint8_t CR1;
+    volatile uint8_t CR2;
+    volatile uint8_t FREQR;
+    volatile uint8_t OARL;
+    volatile uint8_t OARH;
+    volatile uint8_t RES;
+    volatile uint8_t DR;
+    volatile uint8_t SR1;
+    volatile uint8_t SR2;
+    volatile uint8_t SR3;
+    volatile uint8_t ITR;
+    volatile uint8_t CCRL;
+    volatile uint8_t CCRH;
+    volatile uint8_t TRISER;
+} STM8I2C_t;
+
 // 16 Bit Advanced Control
-typedef struct {
+typedef struct STM8_16BIT_ADV_TIM {
     volatile uint8_t CR1;
     volatile uint8_t CR2;
     volatile uint8_t SMCR;
@@ -48,7 +65,7 @@ typedef struct {
 } STM8S105X4_TIM1_t;
 
 // 16 Bit Basic - 3 CAPCOM Channels
-typedef struct {
+typedef struct STM8_16BIT_3CH_TIM {
     volatile uint8_t CR1;
     volatile uint8_t IER;
     volatile uint8_t SR1;
@@ -73,7 +90,7 @@ typedef struct {
 } STM8S105X4_TIM2_t;
 
 // 16 Bit Basic - 2 CAPCOM Channels
-typedef struct {
+typedef struct STM8_16BIT_2CH_TIM {
     volatile uint8_t CR1;
     volatile uint8_t IER;
     volatile uint8_t SR1;
@@ -94,7 +111,7 @@ typedef struct {
 } STM8S105X4_TIM3_t;
 
 // 8 Bit Basic
-typedef struct {
+typedef struct STM8_8Bit_TIM {
     volatile uint8_t CR1;
     volatile uint8_t IER;
     volatile uint8_t SR;

@@ -1,5 +1,6 @@
 #include "timers.h"
 #include <math.h>
+#include "registers.h"
 
 #define TIMX_CR1_CEN    0x01
 #define TIMX_CR1_UDIS   0x02

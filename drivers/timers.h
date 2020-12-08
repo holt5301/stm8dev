@@ -2,7 +2,6 @@
 #define _TIMERS_H
 
 #include <stdint.h>
-#include "registers.h"
 
 // TODO: add interrupt support
 void msTimer_init(uint16_t n_ms);
