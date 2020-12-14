@@ -84,7 +84,7 @@ int8_t i2c_write_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
         I2C->DR = buf[i];
     }
     // Done writing, wait until DR and shift register are empty
-    while(!(I2C->SR1 & I2C_SR1_TXE_DR_EMPTY) && !(I2C->SR1 & I2C_SR1_TXE_DR_EMPTY)) {}
+    while(!(I2C->SR1 & I2C_SR1_TXE_DR_EMPTY) && !(I2C->SR1 & I2C_SR1_BTF)) {}
     
     // All done.
     I2C->CR2 |= I2C_CR2_STOP;
@@ -96,11 +96,7 @@ int8_t i2c_read_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
     uint8_t status;
     // Turn on ACK and start up the communication as master
     // if reading 2 bytes, also set POS
-    if(len == 2) {
-        I2C->CR2 = I2C_CR2_ACK | I2C_CR2_START | I2C_CR2_POS;
-    } else {
-        I2C->CR2 = I2C_CR2_ACK | I2C_CR2_START;
-    }
+    I2C->CR2 = I2C_CR2_ACK | I2C_CR2_START;
 
     // When the start bit is set in the status register, the
     // start condition has been generated and we can move on ...
@@ -117,50 +113,31 @@ int8_t i2c_read_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
     }
     // If only reading 2 bytes, follow this sequence:
     if(len == 2) {
-        // Sit around polling until the hardware hasnt reported the address
+        I2C->CR2 |= I2C_CR2_POS;
+        // Sit around polling until the hardware has reported the address
         // sent
         while(!(I2C->SR1 & I2C_SR1_ADDR_SENT)) {}
         
         // Once it has, read SR3 to clear ADDR and verify the state
         // is what we expect (Receiver and master mode)
         status = I2C->SR3;
-        if((status & I2C_SR3_TRA) || !(status & I2C_SR3_MSL)) {
-            return -1;
-        }
+        //if((status & I2C_SR3_TRA) || !(status & I2C_SR3_MSL)) {
+        //    return -1;
+        //}
         // just set NACK now since POS bit will cause NACK
         // to happen only after second byte is transferred.
         I2C->CR2 &= ~I2C_CR2_ACK;
         // While the BTR and RXNE flags are not set, just wait
-        while(!(I2C->SR1 & I2C_SR1_BTF) && !(I2C->SR1 & I2C_SR1_RXNE_DR_NOTEMPTY)) {}
+        while(!(I2C->SR1 & I2C_SR1_BTF)) {}
         // Once DR and the shift register are filled, then just program stop
-        I2C->CR1 |= I2C_CR2_STOP;
+        I2C->CR2 |= I2C_CR2_STOP;
         // Now read DR twice to get both bytes
         buf[0] = I2C->DR;
         buf[1] = I2C->DR;
         return 0;
     }
 
-    if(len == 1) {
-
-        // Sit around polling until the hardware hasnt reported the address
-        // sent
-        while(!(I2C->SR1 & I2C_SR1_ADDR_SENT)) {}
-        I2C->CR2 &= ~I2C_CR2_ACK;
-        // Once it has, read SR3 to clear ADDR and verify the state
-        // is what we expect (Receiver and master mode)
-        status = I2C->SR3;
-        if((status & I2C_SR3_TRA) || !(status & I2C_SR3_MSL)) {
-            return -1;
-        }
-        I2C->CR2 |= I2C_CR2_STOP;
-        // While the BTR and RXNE flags are not set, just wait
-        while(!(I2C->SR1 & I2C_SR1_RXNE_DR_NOTEMPTY)) {}
-        // Now read DR twice to get both bytes
-        buf[0] = I2C->DR;
-        return 0;
-    }
-
-    // TODO: implement case for len > 2
+    // TODO: implement case for len != 2
 
 
     return 0;

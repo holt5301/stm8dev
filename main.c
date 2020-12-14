@@ -7,7 +7,8 @@ int main() {
     uint16_t ambt_deg;
     led_init();
     temp_sensor_init();
-    msTimer_init(10000);
+    msTimer_init(1000);
+    msTimer_delay();
     while(1) {
         ambt_deg = temp_sensor_read_deg();
         msTimer_set_delay(10 * ambt_deg);
