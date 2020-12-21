@@ -33,6 +33,11 @@
 volatile static STM8I2C_t* I2C = (STM8I2C_t*)(0x005210);
 
 void i2c_init() {
+    static bool initialized = false;
+    if(initialized) {
+        return;
+    }
+
     // Disable the peripheral and reset other bits (just in case)
     I2C->CR1 = 0x00;
     // Disable interrupts for now ... just working by polling
@@ -49,10 +54,12 @@ void i2c_init() {
     I2C->TRISER = 0x03;
     // Program I2C_CR1 to enable the peripheral
     I2C->CR1 = I2C_CR1_PE_ENABLED;
+    
+    initialized = true;
     return;
 }
 
-int8_t i2c_write_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
+int8_t i2c_write_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len, bool stop) {
     uint8_t status;
     int i;
     I2C->CR2 = I2C_CR2_ACK | I2C_CR2_START;
@@ -87,7 +94,9 @@ int8_t i2c_write_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
     while(!(I2C->SR1 & I2C_SR1_TXE_DR_EMPTY) && !(I2C->SR1 & I2C_SR1_BTF)) {}
     
     // All done.
-    I2C->CR2 |= I2C_CR2_STOP;
+    if(stop) {
+        I2C->CR2 |= I2C_CR2_STOP;
+    }
     
     return 0;
 }
