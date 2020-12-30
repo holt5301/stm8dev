@@ -1,5 +1,5 @@
 
-build/blink.hex: build/mcp9808.rel build/led.rel build/main.rel build/drivers/gpio.rel build/drivers/timers.rel build/drivers/i2c.rel
+build/blink.hex: build/lis3dh.rel build/mcp9808.rel build/led.rel build/main.rel build/drivers/gpio.rel build/drivers/timers.rel build/drivers/i2c.rel
 	@echo "Building blink.hex" 
 	sdcc -mstm8 -o build/blink.hex $^
 

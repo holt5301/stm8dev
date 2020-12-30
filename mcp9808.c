@@ -11,6 +11,8 @@
 #define MCP9808_DEVID_REG       0x07
 #define MCP9808_RESOLUTION_REG  0x08
 
+// Current address assumes A2 is tied high so that the address = 0x18 + 0x04 = 0x1C
+
 void mcp9808_init() {
     uint8_t buf[1];
     // Init I2C communication
@@ -18,7 +20,7 @@ void mcp9808_init() {
     // Configure the MCP9808.  Right now that only involves
     // writing to the MCP9808 pointer register so that ambient temp is read
     buf[0] = MCP9808_TA_REG;
-    i2c_write_bytes(0x18, buf, 1, true);
+    i2c_write_bytes(0x1C, buf, 1, true);
     return;
 }
 
@@ -27,7 +29,7 @@ uint16_t mcp9808_read_deg() {
     uint8_t buf[2];
     uint16_t temp = 0;
 
-    i2c_read_bytes(0x18, buf, 2);
+    i2c_read_bytes(0x1C, buf, 2);
 
     // Only take the lower nibble from the MSB
     temp |= ((uint16_t)(buf[0] & 0x0F)) << 8;
