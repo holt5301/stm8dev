@@ -30,7 +30,16 @@
 #define I2C_SR3_BUSY                (uint8_t)(0x01 << 1)
 #define I2C_SR3_MSL                 (uint8_t)(0x01 << 0)
 
+void i2c_init();
+int8_t i2c_write_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len, bool stop);
+int8_t i2c_read_gt2bytes(uint8_t s_addr, uint8_t* buf, uint8_t len);
+int8_t i2c_read_1byte(uint8_t s_addr, uint8_t* buf);
+int8_t i2c_read_2bytes(uint8_t s_addr, uint8_t* buf);
+int8_t i2c_read_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len);
+
 volatile static STM8I2C_t* I2C = (STM8I2C_t*)(0x005210);
+
+// TODO: implement better error detection
 
 void i2c_init() {
     static bool initialized = false;

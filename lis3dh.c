@@ -50,9 +50,11 @@
 int8_t lis3dh_init() {
     uint8_t buf[9];
     uint8_t dev_id;
+    uint8_t read_reg = LIS3DH_WHO_AM_I;
     // Init I2C communication (if not done already)
     i2c_init();
     
+    i2c_write_bytes(0x18, &read_reg, 1, false);
     i2c_read_bytes(0x18, &dev_id, 1);
 
     // Configure the LIS3DH starting at CTRL_REG0 and continuing
@@ -98,9 +100,10 @@ int8_t lis3dh_init() {
 
 void lis3dh_read_accel(int16_t* accel) {
     uint8_t buf[6];
-    uint8_t write_reg[1];
+    // Assert MSB of address to ensure multiple writes give consecutive data
+    uint8_t write_reg = REG_AUTOINC_ON | LIS3DH_OUT_X_L;
 
-    i2c_write_bytes(0x18, write_reg, 1, false);
+    i2c_write_bytes(0x18, &write_reg, 1, false);
     i2c_read_bytes(0x18, buf, 6);
     
     // cast upper byte to 16 bit, shift, then add lower byte so that

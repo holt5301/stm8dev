@@ -14,7 +14,7 @@ int main() {
     lis3dh_init();
     while(1) {
         //ambt_deg = mcp9808_read_deg();
-        //lis3dh_read_accel(accel_mg);
+        lis3dh_read_accel(accel_mg);
         msTimer_set_delay(25);
         msTimer_delay();
         led_toggle();
