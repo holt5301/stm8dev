@@ -101,10 +101,15 @@ int8_t i2c_write_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len, bool stop) {
     return 0;
 }
 
-int8_t i2c_read_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
+
+int8_t i2c_read_gt2bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
+    return 0;
+}
+
+int8_t i2c_read_1byte(uint8_t s_addr, uint8_t* buf) {
     uint8_t status;
+
     // Turn on ACK and start up the communication as master
-    // if reading 2 bytes, also set POS
     I2C->CR2 = I2C_CR2_ACK | I2C_CR2_START;
 
     // When the start bit is set in the status register, the
@@ -117,37 +122,79 @@ int8_t i2c_read_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
     //      - DR[0] - Set to 1 to indicate Receiver mode 
     I2C->DR = (s_addr << 1) | 0x01;
 
+    // Sit around polling until the hardware has reported the address
+    // sent
+    while(!(I2C->SR1 & I2C_SR1_ADDR_SENT)) {}    
+
+    I2C->CR2 &= ~I2C_CR2_ACK;    
+
+    // Once it has, read SR3 to clear ADDR and verify the state
+    // is what we expect (Receiver and master mode)
+    status = I2C->SR3;    
+
+    // Once DR and the shift register are filled, then just program stop
+    I2C->CR2 |= I2C_CR2_STOP;
+
+    while(!(I2C->SR1 & I2C_SR1_RXNE_DR_NOTEMPTY)) {}
+    
+    buf[0] = I2C->DR;
+
+    return 0;
+}
+
+int8_t i2c_read_2bytes(uint8_t s_addr, uint8_t* buf) {
+    uint8_t status;
+    // Turn on ACK and start up the communication as master
+    I2C->CR2 = I2C_CR2_ACK | I2C_CR2_START;
+
+    // When the start bit is set in the status register, the
+    // start condition has been generated and we can move on ...
+    while(!(I2C->SR1 & I2C_SR1_SB)) {}
+
+    // Now need to write the address into the DR
+    // For 7 bit addressing:
+    //      - DR[7:1] - Address to read from
+    //      - DR[0] - Set to 1 to indicate Receiver mode 
+    I2C->DR = (s_addr << 1) | 0x01;
+
+    // If only reading 2 bytes, follow this sequence:
+    I2C->CR2 |= I2C_CR2_POS;
+    // Sit around polling until the hardware has reported the address
+    // sent
+    while(!(I2C->SR1 & I2C_SR1_ADDR_SENT)) {}
+    
+    // Once it has, read SR3 to clear ADDR and verify the state
+    // is what we expect (Receiver and master mode)
+    status = I2C->SR3;
+    //if((status & I2C_SR3_TRA) || !(status & I2C_SR3_MSL)) {
+    //    return -1;
+    //}
+    // just set NACK now since POS bit will cause NACK
+    // to happen only after second byte is transferred.
+    I2C->CR2 &= ~I2C_CR2_ACK;
+    // While the BTR and RXNE flags are not set, just wait
+    while(!(I2C->SR1 & I2C_SR1_BTF)) {}
+    // Once DR and the shift register are filled, then just program stop
+    I2C->CR2 |= I2C_CR2_STOP;
+    // Now read DR twice to get both bytes
+    buf[0] = I2C->DR;
+    buf[1] = I2C->DR;
+    return 0;
+}
+
+// Process for reading various numbers of bytes is significantly different, so
+// need to dispatch to different functions 
+int8_t i2c_read_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
     if(len == 0) {
         return -3;
     }
-    // If only reading 2 bytes, follow this sequence:
-    if(len == 2) {
-        I2C->CR2 |= I2C_CR2_POS;
-        // Sit around polling until the hardware has reported the address
-        // sent
-        while(!(I2C->SR1 & I2C_SR1_ADDR_SENT)) {}
-        
-        // Once it has, read SR3 to clear ADDR and verify the state
-        // is what we expect (Receiver and master mode)
-        status = I2C->SR3;
-        //if((status & I2C_SR3_TRA) || !(status & I2C_SR3_MSL)) {
-        //    return -1;
-        //}
-        // just set NACK now since POS bit will cause NACK
-        // to happen only after second byte is transferred.
-        I2C->CR2 &= ~I2C_CR2_ACK;
-        // While the BTR and RXNE flags are not set, just wait
-        while(!(I2C->SR1 & I2C_SR1_BTF)) {}
-        // Once DR and the shift register are filled, then just program stop
-        I2C->CR2 |= I2C_CR2_STOP;
-        // Now read DR twice to get both bytes
-        buf[0] = I2C->DR;
-        buf[1] = I2C->DR;
-        return 0;
+    else if (len == 1) {
+        return i2c_read_1byte(s_addr, buf);
     }
-
-    // TODO: implement case for len != 2
-
-
-    return 0;
+    else if(len == 2) {
+        return i2c_read_2bytes(s_addr, buf);
+    }
+    else {
+        return i2c_read_gt2bytes(s_addr, buf, len);
+    }
 }
