@@ -49,10 +49,12 @@
 
 int8_t lis3dh_init() {
     uint8_t buf[9];
-
+    uint8_t dev_id;
     // Init I2C communication (if not done already)
     i2c_init();
     
+    i2c_read_bytes(0x18, &dev_id, 1);
+
     // Configure the LIS3DH starting at CTRL_REG0 and continuing
     // for the next 8 registers (i.e. autoincrement on for subsequent
     // writes after the first)
