@@ -112,6 +112,54 @@ int8_t i2c_write_bytes(uint8_t s_addr, uint8_t* buf, uint8_t len, bool stop) {
 
 
 int8_t i2c_read_gt2bytes(uint8_t s_addr, uint8_t* buf, uint8_t len) {
+    uint8_t status;
+    int i;
+    // Turn on ACK and start up the communication as master
+    I2C->CR2 = I2C_CR2_ACK | I2C_CR2_START;
+
+    // When the start bit is set in the status register, the
+    // start condition has been generated and we can move on ...
+    while(!(I2C->SR1 & I2C_SR1_SB)) {}
+
+    // Now need to write the address into the DR
+    // For 7 bit addressing:
+    //      - DR[7:1] - Address to read from
+    //      - DR[0] - Set to 1 to indicate Receiver mode 
+    I2C->DR = (s_addr << 1) | 0x01;
+
+    // Sit around polling until the hardware has reported the address
+    // sent
+    while(!(I2C->SR1 & I2C_SR1_ADDR_SENT)) {}
+    
+    // Once it has, read SR3 to clear ADDR and verify the state
+    // is what we expect (Receiver and master mode)
+    status = I2C->SR3;
+
+    // For all bytes up until the last 3, read them as they come in
+    for(i = 0; i < (len - 3); i++) {
+        while(!(I2C->SR1 & I2C_SR1_RXNE_DR_NOTEMPTY)) {}
+        buf[i] = I2C->DR;
+    }
+
+    // For the last 3 bytes, wait until both buffering registers are full
+    while(!(I2C->SR1 & I2C_SR1_BTF)) {}
+    
+    // Then clear ack so that next receive comes with a nack
+    I2C->CR2 &= ~I2C_CR2_ACK;
+    
+    // Read out of the data register
+    buf[len - 3] = I2C->DR;
+    
+    // Wait until the both buffering registers are again full
+    while(!(I2C->SR1 & I2C_SR1_BTF)) {}
+
+    // Program stop to end the sequence
+    I2C->CR2 |= I2C_CR2_STOP;
+    
+    // Read out the last 2 bytes
+    buf[len - 2] = I2C->DR;
+    buf[len - 1] = I2C->DR;
+
     return 0;
 }
 
